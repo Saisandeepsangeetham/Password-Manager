@@ -19,11 +19,30 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool isLoading = true;
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isFirstTime = prefs.getInt('onBoard');
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: isFirstTime != 0 ? const Register() : const Login(),
+      home: isLoading
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : (isFirstTime == null || isFirstTime != 0)
+              ? const Register()
+              : const Login(),
     );
   }
 }
