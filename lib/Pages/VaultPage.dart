@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:password_manager/Database/database_helper.dart';
+import 'package:password_manager/Models/password_model.dart';
+import 'AddPasswordPage.dart'; // Import the new page
 
 class Vaultpage extends StatefulWidget {
   const Vaultpage({super.key});
@@ -9,46 +12,66 @@ class Vaultpage extends StatefulWidget {
 
 class _VaultpageState extends State<Vaultpage> {
   bool showSearchBar = false;
+  List<PasswordModel> passwords = []; // List to hold fetched passwords
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPasswords(); // Fetch passwords on initialization
+  }
+
+  Future<void> fetchPasswords() async {
+    passwords =
+        await DatabaseHelper().getPasswords(); // Fetch passwords from database
+    setState(() {}); // Update the UI
+  }
+
+  Future<void> deletePassword(int id) async {
+    await DatabaseHelper().deletePassword(id); // Delete password from database
+    fetchPasswords(); // Refresh the list
+  }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-        child: Scaffold(
-            appBar: AppBar(
-              title: const Text(
-                'Saved Passwords',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 20),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        showSearchBar = !showSearchBar;
-                      });
-                    },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                      ),
-                      child: const Icon(
-                        Icons.search,
-                        size: 30,
-                        color: Colors.black,
-                      ),
-                    ),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'Saved Passwords',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 20),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    showSearchBar = !showSearchBar;
+                  });
+                },
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: const Icon(
+                    Icons.search,
+                    size: 30,
+                    color: Colors.black,
                   ),
                 ),
-              ],
-            ),
-            body: SingleChildScrollView(
+              ),
+            )
+          ],
+        ),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -82,24 +105,42 @@ class _VaultpageState extends State<Vaultpage> {
                           ),
                         ],
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          ...List.generate(3, (index) => _buildListItem())
-                        ],
+                      child: ListView.builder(
+                        itemCount: passwords.length,
+                        itemBuilder: (context, index) {
+                          return _buildListItem(passwords[index]);
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
-            )));
+            ),
+            Positioned(
+              bottom: 20,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddPasswordPage()),
+                  ).then((_) => fetchPasswords());
+                },
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.add),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _buildListItem() {
+  Widget _buildListItem(PasswordModel password) {
     return GestureDetector(
       onTap: () {
-        // debugPrint("pressed");
+        // Handle item tap if needed
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
@@ -122,27 +163,36 @@ class _VaultpageState extends State<Vaultpage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    'assets/logo.png',
+                  child: Image.network(
+                    password.iconUrl ??
+                        'https://via.placeholder.com/48', // Fallback if iconUrl is null
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/logo.png', // Fallback to a local asset if the network image fails
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "App Name",
-                      style: TextStyle(
+                    Text(
+                      password.domain,
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Last updated: 2 hrs ago",
+                      password.username,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -152,10 +202,11 @@ class _VaultpageState extends State<Vaultpage> {
                 ),
               ],
             ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 18,
-              color: Colors.grey,
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                deletePassword(password.id!); // Delete the selected password
+              },
             ),
           ],
         ),
