@@ -66,4 +66,18 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+
+  Future<PasswordModel> getPasswordById(int id) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'passwords',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (maps.isNotEmpty) {
+      return PasswordModel.fromMap(maps.first);
+    } else {
+      throw Exception('Password not found');
+    }
+  }
 }

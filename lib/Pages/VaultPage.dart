@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:password_manager/Database/database_helper.dart';
 import 'package:password_manager/Models/password_model.dart';
+import 'ViewPasswordPage.dart';
 import 'AddPasswordPage.dart'; // Import the new page
 
 class Vaultpage extends StatefulWidget {
@@ -12,23 +13,59 @@ class Vaultpage extends StatefulWidget {
 
 class _VaultpageState extends State<Vaultpage> {
   bool showSearchBar = false;
-  List<PasswordModel> passwords = []; // List to hold fetched passwords
+  List<PasswordModel> passwords = [];
+  List<PasswordModel> filteredPasswords = [];
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    fetchPasswords(); // Fetch passwords on initialization
+    fetchPasswords();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchPasswords() async {
-    passwords =
-        await DatabaseHelper().getPasswords(); // Fetch passwords from database
-    setState(() {}); // Update the UI
+    passwords = await DatabaseHelper().getPasswords();
+    filteredPasswords = passwords;
+    setState(() {});
+  }
+
+  void _filterPasswords(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        filteredPasswords = passwords;
+      } else {
+        filteredPasswords = passwords
+            .where((password) =>
+                password.domain.toLowerCase().contains(query.toLowerCase()) ||
+                password.username.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
   }
 
   Future<void> deletePassword(int id) async {
-    await DatabaseHelper().deletePassword(id); // Delete password from database
-    fetchPasswords(); // Refresh the list
+    await DatabaseHelper().deletePassword(id);
+    fetchPasswords();
+  }
+
+  Future<void> _handlePasswordCardClick(
+      int index, PasswordModel password) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Viewpasswordpage(password: password),
+      ),
+    );
+
+    if (result == true) {
+      fetchPasswords();
+    }
   }
 
   @override
@@ -80,8 +117,10 @@ class _VaultpageState extends State<Vaultpage> {
                       Padding(
                         padding: const EdgeInsets.all(10.0),
                         child: TextField(
+                          controller: searchController,
+                          onChanged: _filterPasswords,
                           decoration: InputDecoration(
-                            hintText: 'Search...',
+                            hintText: 'Search by domain or username...',
                             prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -97,7 +136,7 @@ class _VaultpageState extends State<Vaultpage> {
                         shape: BoxShape.rectangle,
                         color: Colors.grey.shade200,
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
+                        boxShadow: const [
                           BoxShadow(
                             color: Colors.black26,
                             blurRadius: 8,
@@ -105,12 +144,23 @@ class _VaultpageState extends State<Vaultpage> {
                           ),
                         ],
                       ),
-                      child: ListView.builder(
-                        itemCount: passwords.length,
-                        itemBuilder: (context, index) {
-                          return _buildListItem(passwords[index]);
-                        },
-                      ),
+                      child: filteredPasswords.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No passwords found',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: filteredPasswords.length,
+                              itemBuilder: (context, index) {
+                                return _buildListItem(
+                                    index, filteredPasswords[index]);
+                              },
+                            ),
                     ),
                   ],
                 ),
@@ -137,10 +187,10 @@ class _VaultpageState extends State<Vaultpage> {
     );
   }
 
-  Widget _buildListItem(PasswordModel password) {
+  Widget _buildListItem(int index, PasswordModel password) {
     return GestureDetector(
       onTap: () {
-        // Handle item tap if needed
+        _handlePasswordCardClick(index, password);
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
