@@ -67,6 +67,7 @@ class _ViewpasswordpageState extends State<Viewpasswordpage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),

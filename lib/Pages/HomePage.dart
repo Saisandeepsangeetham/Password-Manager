@@ -14,9 +14,11 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   final PersistentTabController _controller =
       PersistentTabController(initialIndex: 0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: PersistentTabView(
         context,
         controller: _controller,
@@ -26,6 +28,20 @@ class _HomepageState extends State<Homepage> {
           Settingspage(),
         ],
         items: _navBarsItems(),
+        hideNavigationBarWhenKeyboardShows: true,
+        resizeToAvoidBottomInset: true,
+        bottomScreenMargin: 0,
+        handleAndroidBackButtonPress: true,
+        decoration: NavBarDecoration(
+          borderRadius: BorderRadius.circular(10.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 5,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -37,8 +53,13 @@ class _HomepageState extends State<Homepage> {
         title: "Passwords",
       ),
       PersistentBottomNavBarItem(
-          icon: Icon(Icons.generating_tokens_outlined), title: "Generator"),
-      PersistentBottomNavBarItem(icon: Icon(Icons.settings), title: "Settings"),
+        icon: const Icon(Icons.generating_tokens_outlined),
+        title: "Generator",
+      ),
+      PersistentBottomNavBarItem(
+        icon: const Icon(Icons.settings),
+        title: "Settings",
+      ),
     ];
   }
 }

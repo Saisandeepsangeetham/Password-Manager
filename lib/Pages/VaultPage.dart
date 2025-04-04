@@ -72,6 +72,7 @@ class _VaultpageState extends State<Vaultpage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: const Text(
             'Saved Passwords',
